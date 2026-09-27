@@ -1,0 +1,161 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id String @id @default(cuid())
+  clerkId String @unique
+  userName String?
+  imageUrl String?
+
+  credit Int @default(5)
+  karma Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  confessions  Confession[]
+  reactions    Reaction[]
+  payments     Payment[]
+
+  comments     Comment[]
+  reports      CommentReport[]
+}
+
+
+model Payment {
+  id String   @id  @default(cuid())
+  amount Float
+  credits Int
+  status  PaymentStatus   @default(PENDING)
+  createdAt DateTime @default(now())
+  
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])   //  juste pour accéder à l'utilisateur rapidement
+
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+
+model Confession {
+  id    String  @id   @default(cuid())
+  content   String
+  isAnonymous  Boolean  @default(true)
+  category   Category   @default(BUG)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  authorId  String
+  author    User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  reactions Reaction[]
+
+  comments  Comment[]
+
+  @@index([authorId])
+}
+
+enum Category {
+  BUG
+  GIT_DISASTER
+  PRODUCTION_FAIL
+  COFFEE_NEEDED
+  UPDATE_PROBLEM
+  VERSION_PROBLEM
+}
+
+model Reaction {
+  id   String   @id  @default(cuid())
+  emoji  Emoji
+  createdAt   DateTime  @default(now())
+
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  confessionId  String
+  confession  Confession  @relation(fields: [confessionId], references: [id], onDelete: Cascade)
+
+  @@unique([confessionId, userId, emoji])
+  @@index([confessionId])
+  @@index([userId])
+}
+
+enum Emoji {
+  LAUGH
+  HEART
+  FIRE
+  SALUTE
+  SKULL
+  FACEPALM
+}
+
+
+model Comment {
+  id          String @id @default(cuid())
+  content     String  
+  isAnonymous Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  confessionId  String
+  confession  Confession  @relation(fields: [confessionId], references: [id], onDelete: Cascade)
+
+  //  Reponse a un autre commentaire (relation reflexive)
+  parentId   String?
+  parent     Comment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+
+  replies  Comment[]    @relation("CommentReplies")
+
+  report   CommentReport[]
+
+  @@index([authorId])
+  @@index([confessionId, createdAt])
+  @@index([parentId])
+}
+
+model CommentReport {
+  id        String        @id     @default(cuid())
+  reason    ReportReason
+  createdAt  DateTime   @default(now())
+
+  commentId  String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  reporterId   String
+  reporter  User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, reporterId])
+
+  @@index([commentId])
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  FRAUD
+  OFF_TOPIC
+  OTHER
+}
+
+
