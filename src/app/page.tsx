@@ -6,7 +6,7 @@ import { ConfessionCard } from "@/components/ConfessionCard";
 import Link from "next/link";
 
 export default async function Home() {
-  const { confessions } = await getConfessions(1, 5);
+  const { confessions } = await getConfessions(1, 6);
   const currentUser = await getCurrentUser();
 
   return (

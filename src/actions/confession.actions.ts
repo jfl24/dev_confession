@@ -48,7 +48,7 @@ export async function createConfession(formData: FormData) {
 // localhost:3000/confession?page=1&limit=5&category=BUG (équivalent)
 export async function getConfessions(
   page: number = 1,
-  limit: number = 5,
+  limit: number = 6,
   category?: Category,
 ) {
   const skip = (page - 1) * limit;
