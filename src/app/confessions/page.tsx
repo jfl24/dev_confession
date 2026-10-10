@@ -4,13 +4,21 @@ import { Header } from "@/components/Header";
 import { getConfessions } from "@/actions/confession.actions";
 import { getCurrentUser } from "@/actions/user.actions";
 import { ConfessionCard } from "@/components/ConfessionCard";
-import type { Category } from "@/generated/prisma/enums";
-import { CATEGORY_MAP } from "@/lib/types";
+import { CategoryFilter } from "@/components/CategoryFilter";
 import Link from "next/link";
+import { Category } from "@/generated/prisma/enums";
 
-export default async function PageConfessions() {
-  const { confessions } = await getConfessions(1, 12);
+interface PageConfessionsProps {
+  searchParams: Promise<{ category?: string; page?: string }>;
+}
+
+export default async function PageConfessions({
+  searchParams,
+}: PageConfessionsProps) {
   const currentUser = await getCurrentUser();
+  const params = await searchParams;
+  const category = (params.category as Category) || undefined;
+  const { confessions } = await getConfessions(1, 12, category);
 
   return (
     <div>
@@ -31,24 +39,19 @@ export default async function PageConfessions() {
             Confesser mon fail
           </Link>
         </section>
-        {confessions.length > 0 && (
-          <section>
-            <div className="flex gap-12 mx-auto px-4 items-center mb-6">
-              <h3 className="text-xl font-bold text-white flex gap-2">
-                Filtrer les confessions
-              </h3>
-              <label>Par Catégorie :</label>
-              <select id="category" name="category">
-                <option value="toutes" className="text-black">
-                  Toutes
-                </option>
-                {confessions.map((c) => (
-                  <option key={c.id} value={c.category} className="text-black">
-                    {CATEGORY_MAP[c.category]?.label}
-                  </option>
-                ))}
-              </select>
+        <section>
+          <div className="flex gap-12 mx-auto px-4 items-center mb-6">
+            <h3 className="text-xl font-bold text-white flex gap-2">
+              Filtrer les confessions
+            </h3>
+            <label>Par Catégorie :</label>
+            <CategoryFilter />
+          </div>
+          {confessions.length === 0 ? (
+            <div className="text-center py-12 text-zinc-400">
+              <p>Aucune confession trouvée dans cette catégorie.</p>
             </div>
+          ) : (
             <div className="grid md:grid-cols-3 gap-6">
               {confessions.map((c) => (
                 <div key={c.id} className="relative">
@@ -59,8 +62,8 @@ export default async function PageConfessions() {
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          )}
+        </section>
       </main>
     </div>
   );
